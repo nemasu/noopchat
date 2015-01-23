@@ -24,7 +24,7 @@ class NoopChat : public WebListener {
 
 		void
 		onData(int fd, unsigned char *data, unsigned int size) {
-			if( data == NULL || fds.count(fd) == 0 ) {
+			if( data == NULL || size == 0 || fds.count(fd) == 0 ) {
 				return;
 			}
 
