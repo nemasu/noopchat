@@ -1,2 +1,2 @@
 # noopchat
-Demo for libasock and libcppweb.
+Demo for libcppweb.
