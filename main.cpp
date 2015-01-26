@@ -1,25 +1,27 @@
-#include <CppWeb.h> 
+#include <CppWeb.h>
+#include <iostream>
 #include <set>
+#include <signal.h>
 
 using std::set;
 
 class NoopChat : public WebListener {
 	private:
 		set<int> fds;
-		CppWeb *cppWeb;
+		CppWeb cppWeb;
 
 	public:
-		NoopChat() {
-			cppWeb = new CppWeb(this);
+		NoopChat()
+			: cppWeb(*this){
 		}
 	
 		~NoopChat() {
-			delete cppWeb;
+			cppWeb.stop();
 		}
 
 		void
 		start() {
-			cppWeb->start(8000);
+			cppWeb.start(8000);
 		}
 
 		void
@@ -29,7 +31,7 @@ class NoopChat : public WebListener {
 			}
 
 			for( int toFd : fds ) {
-				cppWeb->send(toFd, data, size);
+				cppWeb.send(toFd, data, size);
 			}
 		}
 
@@ -45,14 +47,29 @@ class NoopChat : public WebListener {
 
 };
 
+volatile bool isRunning = true;
+
+void sig_handler(int signo)
+{
+	if( signo == SIGINT ) {
+		std::cout << "Shutting down ... " << std::endl;
+		isRunning = false;
+	}
+}
+
 int
 main( int argv, char **argc ) {
+	
+	if( signal(SIGINT, sig_handler) == SIG_ERR ) {
+		std::cout << "Failed to setup SIGINT catching" << std::endl;
+	}
+
 	NoopChat noopChat;
 	noopChat.start();
 
-	while(1) {
+	while( isRunning ) {
 		usleep(1000000);
 	}
-
+	
 	return 0;
 }
