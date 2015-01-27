@@ -7,7 +7,7 @@ debug: CCOPTS += -g
 debug: noopchat
 
 noopchat: main.cpp
-	g++ ${CCOPTS} main.cpp -o noopchat -lcppweb
+	g++ ${CCOPTS} main.cpp -o noopchat /usr/lib/libcppweb.a /usr/lib/libasock.a /usr/lib/libcrypto.a /usr/lib/libz.a -ldl -lpthread
 
 strip:
 	strip --strip-all noopchat
