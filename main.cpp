@@ -14,6 +14,11 @@ using std::unordered_map;
 
 struct UserData {
 	UserData() {
+		reset();
+	}
+
+	void
+	reset() {
 		name = "Anonymous";
 	}
 	string name;
@@ -81,7 +86,7 @@ class NoopChat : public WebListener {
 					Value &cmd = d[KEY_MSG];
 					string cmdValue = cmd.GetString();
 					for( auto &e : users ) {
-						string msg = e.second.name + ": " + cmdValue;
+						string msg = users[fd].name + ": " + cmdValue;
 						cppWeb.send(e.first, (unsigned char *) msg.c_str(), msg.length());
 					}
 
@@ -92,7 +97,7 @@ class NoopChat : public WebListener {
 
 		void
 		onConnect( int fd ) {
-			users[fd];
+			users[fd].reset();
 		}
 
 		void
