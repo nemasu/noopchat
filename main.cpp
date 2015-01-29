@@ -1,18 +1,38 @@
 #include <CppWeb.h>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 #include <iostream>
-#include <set>
+#include <unordered_map>
 #include <signal.h>
 
-using std::set;
+#define MAX_BUFFER_SIZE 65535
+
+using namespace rapidjson;
+
+using std::unordered_map;
+
+struct UserData {
+	UserData() {
+		name = "Anonymous";
+	}
+	string name;
+};
 
 class NoopChat : public WebListener {
 	private:
-		set<int> fds;
+		static constexpr const char* KEY_NAME = "name";
+		static constexpr const char* KEY_MSG  = "msg";
+		
+		unordered_map<int, UserData> users;
 		CppWeb cppWeb;
+		char recvBuffer[MAX_BUFFER_SIZE];
+		int recvBufferIdx;
 
 	public:
 		NoopChat()
 			: cppWeb(*this){
+			recvBufferIdx = 0;
 		}
 	
 		~NoopChat() {
@@ -26,25 +46,59 @@ class NoopChat : public WebListener {
 
 		void
 		onData(int fd, unsigned char *data, unsigned int size) {
-			if( data == NULL || size == 0 || fds.count(fd) == 0 ) {
+			if( data == NULL || size == 0 || users.count(fd) == 0 ) {
 				return;
 			}
 
-			for( int toFd : fds ) {
-				cppWeb.send(toFd, data, size);
+			//Concat buffer
+			if ( size + recvBufferIdx >= MAX_BUFFER_SIZE-1 ) {
+				//Something is not right, start over
+				std::cerr << "Buffer size error" << std::endl;
+				recvBufferIdx = 0;
 			}
+
+			memcpy( recvBuffer + recvBufferIdx, data, size ); 
+			memcpy( recvBuffer + recvBufferIdx + size, "\0", 1 ); 
+
+			//Deserialize
+			Document d;
+			d.Parse(recvBuffer);
+
+			//Handle
+			if( !d.HasParseError() ) {
+				if (   d.HasMember(KEY_NAME)
+					&& d[KEY_NAME].IsString() ) {
+				
+					Value &cmd = d[KEY_NAME];
+					string cmdValue = cmd.GetString();
+					users[fd].name = cmdValue;
+					
+				}
+				
+				if (   d.HasMember(KEY_MSG)
+					&& d[KEY_MSG].IsString() ) {
+					
+					Value &cmd = d[KEY_MSG];
+					string cmdValue = cmd.GetString();
+					for( auto &e : users ) {
+						string msg = e.second.name + ": " + cmdValue;
+						cppWeb.send(e.first, (unsigned char *) msg.c_str(), msg.length());
+					}
+
+				}
+			}
+			
 		}
 
 		void
 		onConnect( int fd ) {
-			fds.insert(fd);
+			users[fd];
 		}
 
 		void
 		onClose( int fd ) {
-			fds.erase(fd);
+			users.erase(fd);
 		}
-
 };
 
 volatile bool isRunning = true;

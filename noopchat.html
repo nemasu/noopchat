@@ -5,17 +5,36 @@
     var wsUri = "ws://service.shoutium.com:8000";
     var output;
 
-    function init() {
-        
+	var Pkt = function() {
+		this.name = null;;
+		this.msg = null;
+	}
+ 	
+	function init() {
+    
+		$("#userNameInput")[0].value = "Anonymous";
+
 		$("#textInput").keyup(function(event){
 			if(event.keyCode == 13){
-				doSend($("#textInput")[0].value);
+				var toSend = new Pkt();
+				toSend.msg = $("#textInput")[0].value;
+				doSend(JSON.stringify(toSend));
 				$("#textInput")[0].value = "";
 			}
 		});
-		
+	
+		$("#userNameInput").keyup(function(event){
+			if(event.keyCode == 13){
+				var toSend = new Pkt();
+				toSend.name = $("#userNameInput")[0].value;
+				doSend(JSON.stringify(toSend));
+				writeToScreen("<span style=\"color: red\">Set username to: " + toSend.name + "</span>");
+			}
+		});	
 		output = document.getElementById("output");
         testWebSocket();
+
+		$("#textInput").focus();
     }
 
     function testWebSocket() {
@@ -63,6 +82,16 @@
     window.addEventListener("load", init, false);
 </script>
 <h2>noop chat</h2>
-<input id="textInput" type="text" />
+Instructions: Enter to send.<br />
+<table border=0>
+<tr>
+	<td>User name:</td>
+	<td><input id="userNameInput" type="text"/></td>
+</tr>
+<tr>
+	<td>Message:</td>
+	<td><input id="textInput" text="text" /></td>
+</tr>
+</table>
 <div id="output"></div>
 </html>
