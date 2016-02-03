@@ -38,6 +38,7 @@ class NoopChat : public WebListener {
 		NoopChat()
 			: cppWeb(*this){
 			recvBufferIdx = 0;
+			cppWeb.setBinaryFrames(false);
 		}
 	
 		~NoopChat() {
